@@ -1,3 +1,13 @@
+## 🖼 Demo
+
+Here is the AI in action:
+
+![AI Demo](demo.png)
+
+Here is the main code snippet:
+
+![Code Snippet](code.png)
+
 # 🤖 AI Memento Project
 
 AI Memento Project is a simple AI agent built using **Python** and **Ollama (Llama 3 model)**.  
