@@ -30,6 +30,16 @@ def reset_memory():
     with open("memory.json", "w", encoding="utf-8") as f:
         json.dump({}, f)
 
+def summarize_chat():
+    """Summarize recent chat log"""
+    try:
+        with open(log_file, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        last_lines = lines[-6:]  # last 3 exchanges (You + AI)
+        return "".join(last_lines).strip()
+    except:
+        return "No previous conversation available."
+
 while True:
     user_input = input("You: ")
 
@@ -40,6 +50,11 @@ while True:
     if user_input.lower() in ["reset", "clear memory"]:
         reset_memory()
         print("AI: Memory has been cleared 🧹")
+        continue
+
+    if user_input.lower() in ["history", "recall", "summary"]:
+        summary = summarize_chat()
+        print("AI: Here’s what we recently talked about:\n" + summary)
         continue
 
     facts = get_memory()
@@ -72,14 +87,21 @@ while True:
         response = f"You live in {facts['city']}." if "city" in facts else "I don’t know where you live yet."
     elif "what is my hobby" in user_input.lower():
         response = f"Your hobby is {facts['hobby']}." if "hobby" in facts else "I don’t know your hobby yet."
+
+    # --- Recall Command ---
+    elif "what did we talk about" in user_input.lower():
+        response = "Here’s a summary:\n" + summarize_chat()
+
     else:
-        response = f"You said: {user_input}"
+        response = f"I heard you say: {user_input}. Can you tell me more?"
 
     print("AI:", response)
 
     with open(log_file, "a", encoding="utf-8") as log:
         log.write(f"You: {user_input}\n")
         log.write(f"AI: {response}\n")
+
+
 
 
 
