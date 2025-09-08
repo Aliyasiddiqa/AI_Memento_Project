@@ -1,52 +1,68 @@
 import json
-from memento import Memory, Agent
+import datetime
+from memento import Memory
 
-# Dummy memory object for Agent
+# Initialize memory
 memory = Memory("memory.json")
-agent = Agent(model="llama3", memory=memory)
 
-# Load conversation memory from file
-try:
-    with open("memory.json", "r") as f:
-        memory_data = json.load(f)  # list of [user, ai] pairs
-except (FileNotFoundError, json.JSONDecodeError):
-    memory_data = []
+log_file = "chat_log.txt"
 
-print("🤖 AI Memento Agent Ready!")
-print("Type 'history' to see past chats, 'clear' to reset memory, or just chat.")
-print("---------------------------------------------------------\n")
+with open(log_file, "a", encoding="utf-8") as log:
+    log.write("\n\n--- New Chat Session: {} ---\n".format(datetime.datetime.now()))
+
+def get_memory():
+    """Load memory.json and return data as a dictionary"""
+    try:
+        with open("memory.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_memory(key, value):
+    """Save new info to memory.json"""
+    data = get_memory()
+    data[key] = value
+    with open("memory.json", "w", encoding="utf-8") as f:
+        json.dump(data, f)
 
 while True:
     user_input = input("You: ")
 
-    # Show history
-    if user_input.lower() == "history":
-        print("\n--- Conversation History ---")
-        if not memory_data:
-            print("(No history yet)")
+    if user_input.lower() in ["exit", "quit", "bye"]:
+        print("AI: Goodbye! 👋")
+        break
+
+    # Get current memory
+    facts = get_memory()
+
+    # --- Natural reply system ---
+    response = ""
+    if "my name is" in user_input.lower():
+        # extract name
+        name = user_input.split("is")[-1].strip()
+        save_memory("name", name)
+        response = f"Nice to meet you, {name}! I'll remember your name."
+    elif "what is my name" in user_input.lower():
+        if "name" in facts:
+            response = f"Your name is {facts['name']}."
         else:
-            for user, ai in memory_data:
-                print(f"User: {user}")
-                print(f"AI: {ai}\n")
-        print("-----------------------------\n")
-        continue
+            response = "Hmm, I don’t know your name yet. Can you tell me?"
+    else:
+        response = f"You said: {user_input}"
 
-    # Clear memory
-    if user_input.lower() == "clear":
-        memory_data = []
-        with open("memory.json", "w") as f:
-            json.dump(memory_data, f)
-        print("🧹 Memory cleared!")
-        continue
-
-    # Normal chat
-    response = agent.chat(user_input)
     print("AI:", response)
 
-    # Save conversation to memory
-    memory_data.append([user_input, response])
-    with open("memory.json", "w") as f:
-        json.dump(memory_data, f)
+    # Save to chat log
+    with open(log_file, "a", encoding="utf-8") as log:
+        log.write(f"You: {user_input}\n")
+        log.write(f"AI: {response}\n")
+
+
+
+
+
+
+
 
 
 
