@@ -1,121 +1,102 @@
-import json
-import datetime
+import pyttsx3
+import speech_recognition as sr
 from memento import Memory
+from agent_core import Agent
 
-# Initialize memory
 memory = Memory("memory.json")
+agent = Agent(model="llama3", memory=memory)
+engine = pyttsx3.init()
+recognizer = sr.Recognizer()
 
-log_file = "chat_log.txt"
+# Ask user mode
+mode = input("Choose mode: (1) Voice  (2) Text\nYour choice: ")
 
-with open(log_file, "a", encoding="utf-8") as log:
-    log.write("\n\n--- New Chat Session: {} ---\n".format(datetime.datetime.now()))
-
-def get_memory():
-    """Load memory.json and return data as a dictionary"""
-    try:
-        with open("memory.json", "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return {}
-
-def save_memory(key, value):
-    """Save new info to memory.json"""
-    data = get_memory()
-    data[key] = value
-    with open("memory.json", "w", encoding="utf-8") as f:
-        json.dump(data, f)
-
-def reset_memory():
-    """Clear memory.json"""
-    with open("memory.json", "w", encoding="utf-8") as f:
-        json.dump({}, f)
-
-def summarize_chat():
-    """Summarize recent chat log"""
-    try:
-        with open(log_file, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-        last_lines = lines[-6:]  # last 3 exchanges (You + AI)
-        return "".join(last_lines).strip()
-    except:
-        return "No previous conversation available."
+print("✅ AI Memento Project Started")
 
 while True:
-    user_input = input("You: ")
+    try:
+        if mode == "1":  # Voice mode
+            with sr.Microphone() as source:
+                print("🎤 Speak now...")
+                audio = recognizer.listen(source)
+                user_input = recognizer.recognize_google(audio)
+                print("You:", user_input)
+        else:  # Text mode
+            user_input = input("You: ")
 
-    if user_input.lower() in ["exit", "quit", "bye"]:
-        print("AI: Goodbye! 👋")
+        response = agent.chat(user_input)
+        print("AI:", response)
+
+        # Speak only in voice mode
+        if mode == "1":
+            engine.say(response)
+            engine.runAndWait()
+
+    except KeyboardInterrupt:
+        print("\n👋 Exiting... Goodbye!")
         break
 
-    if user_input.lower() in ["reset", "clear memory"]:
-        reset_memory()
-        print("AI: Memory has been cleared 🧹")
-        continue
+import pyttsx3
+import speech_recognition as sr
+from memento import Memory
+from agent_core import Agent  # ✅ now imports from agent_core
 
-    if user_input.lower() in ["history", "recall", "summary"]:
-        summary = summarize_chat()
-        print("AI: Here’s what we recently talked about:\n" + summary)
-        continue
+def speak(text):
+    """Convert text to speech"""
+    try:
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print("🔇 Could not speak:", e)
 
-    facts = get_memory()
-    response = ""
+# Initialize
+memory = Memory("memory.json")
+agent = Agent(model="llama3", memory=memory)
 
-    # --- Learning Facts ---
-    if "my name is" in user_input.lower():
-        name = user_input.split("is")[-1].strip()
-        save_memory("name", name)
-        response = f"Got it, your name is {name}. I'll remember that."
-    elif "my age is" in user_input.lower():
-        age = user_input.split("is")[-1].strip()
-        save_memory("age", age)
-        response = f"Thanks! I'll remember that you are {age} years old."
-    elif "i live in" in user_input.lower():
-        city = user_input.split("in")[-1].strip()
-        save_memory("city", city)
-        response = f"Great! I'll remember that you live in {city}."
-    elif "my hobby is" in user_input.lower():
-        hobby = user_input.split("is")[-1].strip()
-        save_memory("hobby", hobby)
-        response = f"Cool! I'll remember that your hobby is {hobby}."
+# Setup TTS
+engine = pyttsx3.init()
 
-    # --- Answering Questions ---
-    elif "what is my name" in user_input.lower():
-        response = f"Your name is {facts['name']}." if "name" in facts else "I don’t know your name yet."
-    elif "what is my age" in user_input.lower():
-        response = f"You are {facts['age']} years old." if "age" in facts else "I don’t know your age yet."
-    elif "where do i live" in user_input.lower():
-        response = f"You live in {facts['city']}." if "city" in facts else "I don’t know where you live yet."
-    elif "what is my hobby" in user_input.lower():
-        response = f"Your hobby is {facts['hobby']}." if "hobby" in facts else "I don’t know your hobby yet."
+# Setup speech recognizer
+recognizer = sr.Recognizer()
+mic_available = True
 
-    # --- Recall Command ---
-    elif "what did we talk about" in user_input.lower():
-        response = "Here’s a summary:\n" + summarize_chat()
+try:
+    sr.Microphone()
+except Exception:
+    mic_available = False
+    print("⚠️ No microphone detected. Falling back to text mode.")
 
-    else:
-        response = f"I heard you say: {user_input}. Can you tell me more?"
+print("✅ AI Memento Project Started (Day 11 - Voice Support)")
+print("🎤 Speak if mic works, or type if not.")
 
-    print("AI:", response)
+while True:
+    try:
+        if mic_available:
+            # Try voice input
+            with sr.Microphone() as source:
+                print("🎤 Speak now (or press Ctrl+C to quit)...")
+                audio = recognizer.listen(source)
+                user_input = recognizer.recognize_google(audio)
+                print("You:", user_input)
+        else:
+            # Fallback to text input
+            user_input = input("You: ")
 
-    with open(log_file, "a", encoding="utf-8") as log:
-        log.write(f"You: {user_input}\n")
-        log.write(f"AI: {response}\n")
+        # AI Response
+        response = agent.chat(user_input)
+        print("AI:", response)
 
+        # Speak response
+        speak(response)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    except sr.UnknownValueError:
+        print("❌ Sorry, I didn’t understand. Try again.")
+    except sr.RequestError:
+        print("❌ Speech recognition service unavailable. Switching to text mode.")
+        mic_available = False
+    except KeyboardInterrupt:
+        print("\n👋 Exiting... Goodbye!")
+        break
+    except Exception as e:
+        print("⚠️ Error:", e)
+        mic_available = False
