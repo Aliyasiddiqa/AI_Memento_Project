@@ -1,23 +1,35 @@
-## 🖼 Demo
+# 🧠 AI Memento Project
 
-Here is the AI in action:
+A simple **AI memory assistant** built with Python.  
+This bot can **remember facts about you**, **recall past conversations**, and **summarize chat history** across sessions.
 
-![AI Demo](demo.png)
+---
 
-Here is the main code snippet:
+## 🚀 Features by Day
 
-![Code Snippet](code.png)
+### ✅ Day 1–6
+- Basic AI chatbot loop.
+- Memory system using `memory.json`.
+- Logs conversations to `chat_log.txt`.
 
-# 🤖 AI Memento Project
+### ✅ Day 7
+- Custom memory handling.
+- Natural responses instead of repeating input.
+- Chat logging improvements.
 
-AI Memento Project is a simple AI agent built using **Python** and **Ollama (Llama 3 model)**.  
-It allows you to chat with an AI locally on your system.  
+### ✅ Day 8
+- Added GitHub **tags per day** (day7, day8, …) for version snapshots.
+- Organized `.gitignore` to avoid committing runtime files.
 
-## 🚀 Features
-- Short answers (interview-style)  
-- Long answers (teacher-style)  
-- Runs on your computer using Ollama  
+### ✅ Day 9 (Latest)
+- **Learns facts**: Name, Age, City, Hobby.
+- **Answers questions** about remembered facts.
+- **Summarizes recent chat history** with `history` / `recall` / `summary`.
+- **Polite fallback** responses (instead of raw echo).
+- **Reset memory** with `reset`.
 
-## ⚙️ How to Run
-1. Install [Ollama](https://ollama.com/download)  
-2. Download the model:  
+---
+
+## 🖥️ Example Usage
+
+
