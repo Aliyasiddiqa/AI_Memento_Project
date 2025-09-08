@@ -1,50 +1,75 @@
-import subprocess
+from memento import Memory, Agent
+import os
+import json
 
-# Store chat history
-chat_history = []
+memory = Memory("memory.json")
 
-def run_ollama(prompt, mode="short"):
-    """
-    Run Ollama model with user prompt and memory.
-    mode = "short" (interview style) or "long" (teacher style)
-    """
-    # Add mode instruction
-    if mode == "short":
-        mode_instruction = "Answer briefly, like in an interview."
-    else:
-        mode_instruction = "Explain in detail, like teaching a beginner."
+class MyAgent(Agent):
+    def chat(self, user_input: str) -> str:
+        clean_input = user_input.strip().lower()
 
-    # Full prompt includes memory + current question
-    full_prompt = "\n".join(chat_history + [f"{mode_instruction}\n{prompt}"])
-    
-    result = subprocess.run(
-        ["ollama", "run", "llama3"],
-        input=full_prompt.encode("utf-8"),
-        capture_output=True
-    )
-    return result.stdout.decode("utf-8", errors="ignore").strip()
+        # ---- Rule: Reset memory ----
+        if clean_input in ["reset memory", "clear memory", "delete memory"]:
+            if os.path.exists("memory.json"):
+                with open("memory.json", "w") as f:
+                    f.write("[]")  # reset to empty JSON
+            return "Memory has been cleared!"
 
-# --- Main Chat Loop ---
-print("Choose answer mode:")
-print("1. Short (Interview style)")
-print("2. Long (Teacher style)")
+        # ---- Rule: Store name ----
+        if "my name is" in clean_input:
+            name = user_input.split("is")[-1].strip()
+            self.memory.add(f"[FACT] Your name is {name}")
+            return f"Nice to meet you, {name}!"
 
-choice = input("Enter 1 or 2: ").strip()
-mode = "short" if choice == "1" else "long"
+        # ---- Rule: Recall name ----
+        elif "what is my name" in clean_input:
+            if os.path.exists("memory.json"):
+                with open("memory.json", "r") as f:
+                    try:
+                        all_memory = json.load(f)
+                    except:
+                        all_memory = []
+            else:
+                all_memory = []
 
-print("\n🤖 AI Memento Project (Day 3)")
-print("Type 'exit' or 'quit' to stop.\n")
+            facts = [m for m in all_memory if "Your name is" in m]
+            if facts:
+                return facts[-1].replace("[FACT] ", "")
+            else:
+                return "I don’t know your name yet."
+
+        # ---- Rule: Store questions ----
+        elif user_input.endswith("?"):
+            self.memory.add(f"[QUESTION] {user_input}")
+            return f"I’ll remember that question: {user_input}"
+
+        # ---- Rule: Recall past questions ----
+        elif "what questions did i ask" in clean_input:
+            if os.path.exists("memory.json"):
+                with open("memory.json", "r") as f:
+                    try:
+                        all_memory = json.load(f)
+                    except:
+                        all_memory = []
+            else:
+                all_memory = []
+
+            questions = [m.replace("[QUESTION] ", "") for m in all_memory if m.startswith("[QUESTION]")]
+            if questions:
+                return "Here are the questions you asked:\n- " + "\n- ".join(questions)
+            else:
+                return "You haven’t asked me any questions yet."
+
+        # ---- Default: store conversation ----
+        else:
+            self.memory.add(f"[CONVO] {user_input}")
+            return f"I remember you said: {user_input}"
+
+agent = MyAgent(model="llama3", memory=memory)
 
 while True:
     user_input = input("You: ")
-    if user_input.lower() in ["exit", "quit"]:
-        print("Goodbye! 👋")
-        break
-    
-    response = run_ollama(user_input, mode)
-    
-    # Save current question & answer to memory
-    chat_history.append("You: " + user_input)
-    chat_history.append("AI: " + response)
-    
+    response = agent.chat(user_input)
     print("AI:", response)
+
+
