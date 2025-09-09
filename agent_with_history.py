@@ -1,171 +1,77 @@
-# agent_with_history.py
-import os
 import json
-import shutil
-from datetime import datetime
-from pathlib import Path
+import os
+import speech_recognition as sr
+import pyttsx3
+from agent_core import Agent, Memory  # make sure your Agent & Memory classes are imported
 
-# import your existing classes
-from memento import Memory, Agent
+# ===== Voice helpers =====
+engine = pyttsx3.init()
 
-CHATS_DIR = Path("chats")
-BACKUPS_DIR = Path("backups")
-MEMORY_FILE = Path("memory.json")
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
 
-# ensure folders exist
-CHATS_DIR.mkdir(exist_ok=True)
-BACKUPS_DIR.mkdir(exist_ok=True)
+def listen():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.adjust_for_ambient_noise(source, duration=0.5)
+        audio = r.listen(source)
+    try:
+        return r.recognize_google(audio)
+    except sr.UnknownValueError:
+        print("Sorry, could not understand audio.")
+        return ""
+    except sr.RequestError as e:
+        print("Could not request results; check your internet connection.", e)
+        return ""
 
-def timestamp():
-    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+# ===== Memory & session setup =====
+MEMORY_FILE = "memory.json"
+CHATS_FOLDER = "chats"
+os.makedirs(CHATS_FOLDER, exist_ok=True)
 
-class ChatHistoryManager:
-    def __init__(self, chats_dir=CHATS_DIR):
-        self.chats_dir = Path(chats_dir)
-        self.session_file = None
+memory = Memory(MEMORY_FILE)
+agent = Agent(model="llama3", memory=memory)
 
-    def start_session(self):
-        name = f"{timestamp()}.json"
-        self.session_file = self.chats_dir / name
-        self._write_json(self.session_file, [])
-        return self.session_file
+conversation_history = []
 
-    def append_message(self, role, text):
-        if self.session_file is None:
-            self.start_session()
-        data = self._read_json(self.session_file)
-        data.append({"role": role, "text": text, "time": datetime.now().isoformat()})
-        self._write_json(self.session_file, data)
+def save_session_message(user_msg, ai_msg):
+    conversation_history.append({"user": user_msg, "ai": ai_msg})
+    session_file = os.path.join(CHATS_FOLDER, f"chats_{len(conversation_history)}.json")
+    with open(session_file, "w", encoding="utf-8") as f:
+        json.dump(conversation_history, f, ensure_ascii=False, indent=2)
 
-    def list_sessions(self):
-        files = sorted(self.chats_dir.glob("*.json"), reverse=True)
-        return files
+def list_history():
+    print("Conversation history:")
+    for idx, item in enumerate(conversation_history, start=1):
+        print(f"{idx}. You: {item['user']}  | AI: {item['ai']}")
 
-    def read_session(self, file_ref):
-        file_path = self._resolve_file(file_ref)
-        return self._read_json(file_path)
+def reset_memory():
+    memory_path = MEMORY_FILE
+    if os.path.exists(memory_path):
+        with open(memory_path, "w", encoding="utf-8") as f:
+            f.write("{}")
+        print("Memory reset successfully.")
 
-    def export_session_text(self, file_ref, out_path=None):
-        file_path = self._resolve_file(file_ref)
-        messages = self._read_json(file_path)
-        out_path = out_path or (file_path.with_suffix(".txt"))
-        with open(out_path, "w", encoding="utf-8") as f:
-            for m in messages:
-                prefix = "You" if m["role"] == "user" else "AI" if m["role"] == "assistant" else m["role"]
-                time = m.get("time", "")
-                f.write(f"[{time}] {prefix}: {m['text']}\n\n")
-        return out_path
-
-    def _resolve_file(self, file_ref):
-        # accept index or filename
-        if isinstance(file_ref, int):
-            files = self.list_sessions()
-            try:
-                return files[file_ref]
-            except IndexError:
-                raise FileNotFoundError("No session at that index.")
-        else:
-            p = Path(file_ref)
-            if p.exists():
-                return p
-            # try in chats dir
-            cand = self.chats_dir / file_ref
-            if cand.exists():
-                return cand
-            raise FileNotFoundError(f"Session file not found: {file_ref}")
-
-    @staticmethod
-    def _read_json(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-
-    @staticmethod
-    def _write_json(path, data):
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-
-# Utility functions for memory manipulation (best-effort)
-def backup_memory(memory_path=MEMORY_FILE):
-    if memory_path.exists():
-        bname = BACKUPS_DIR / f"memory_backup_{memory_path.stem}_{timestamp()}{memory_path.suffix}"
-        shutil.copy2(memory_path, bname)
-        return bname
-    return None
-
-def clear_memory(memory_path=MEMORY_FILE):
-    backup_memory(memory_path)
-    if not memory_path.exists():
-        # nothing to clear; create empty structure (dict)
-        memory_path.write_text(json.dumps({}), encoding="utf-8")
-        return
-    with open(memory_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    if isinstance(data, list):
-        new = []
-    elif isinstance(data, dict):
-        new = {}
-    else:
-        new = {}
-    with open(memory_path, "w", encoding="utf-8") as f:
-        json.dump(new, f, indent=2, ensure_ascii=False)
-
-def remove_message_from_memory_text(message_text, memory_path=MEMORY_FILE, max_matches=10):
-    """
-    Best-effort: load memory.json, recursively remove string elements or dict entries that contain message_text.
-    Creates a backup before modifying.
-    Returns number of removals.
-    """
-    if not memory_path.exists():
-        # If file does not exist, create empty {}
-        memory_path.write_text("{}", encoding="utf-8")
+def remove_message_from_memory_text(message_text, memory_path=MEMORY_FILE):
+    if not os.path.exists(memory_path):
+        with open(memory_path, "w", encoding="utf-8") as f:
+            f.write("{}")
         return 0
 
-    backup = backup_memory(memory_path)
-
-    # Try reading the JSON safely
-    try:
-        with open(memory_path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if not content:   # file is empty
-                data = {}
-            else:
-                data = json.loads(content)
-    except Exception:
-        # If file is corrupted, reset to {}
-        data = {}
+    with open(memory_path, "r", encoding="utf-8") as f:
+        content = f.read().strip()
+        data = {} if not content else json.loads(content)
 
     removed_count = 0
 
     def recurse(obj):
         nonlocal removed_count
         if isinstance(obj, list):
-            new_list = []
-            for item in obj:
-                if isinstance(item, str):
-                    if message_text in item and removed_count < max_matches:
-                        removed_count += 1
-                        continue
-                    else:
-                        new_list.append(item)
-                elif isinstance(item, (list, dict)):
-                    new_list.append(recurse(item))
-                else:
-                    new_list.append(item)
-            return new_list
+            return [recurse(i) for i in obj if not (isinstance(i, str) and i == message_text)]
         elif isinstance(obj, dict):
-            new_dict = {}
-            for k, v in obj.items():
-                if isinstance(v, str):
-                    if message_text in v and removed_count < max_matches:
-                        removed_count += 1
-                        continue
-                    else:
-                        new_dict[k] = v
-                elif isinstance(v, (list, dict)):
-                    new_dict[k] = recurse(v)
-                else:
-                    new_dict[k] = v
-            return new_dict
+            return {k: recurse(v) for k, v in obj.items() if not (isinstance(v, str) and v == message_text)}
         else:
             return obj
 
@@ -176,181 +82,51 @@ def remove_message_from_memory_text(message_text, memory_path=MEMORY_FILE, max_m
 
     return removed_count
 
-
-    removed_count = 0
-
-    def recurse(obj):
-        nonlocal removed_count
-        if isinstance(obj, list):
-            new_list = []
-            for item in obj:
-                if isinstance(item, str):
-                    if message_text in item and removed_count < max_matches:
-                        removed_count += 1
-                        continue
-                    else:
-                        new_list.append(item)
-                elif isinstance(item, (list, dict)):
-                    new_item = recurse(item)
-                    new_list.append(new_item)
-                else:
-                    new_list.append(item)
-            return new_list
-        elif isinstance(obj, dict):
-            new_dict = {}
-            for k, v in obj.items():
-                # check keys too? only values for safety
-                if isinstance(v, str):
-                    if message_text in v and removed_count < max_matches:
-                        removed_count += 1
-                        continue
-                    else:
-                        new_dict[k] = v
-                elif isinstance(v, (list, dict)):
-                    new_dict[k] = recurse(v)
-                else:
-                    new_dict[k] = v
-            return new_dict
-        else:
-            return obj
-
-    new_data = recurse(data)
-
-    with open(memory_path, "w", encoding="utf-8") as f:
-        json.dump(new_data, f, ensure_ascii=False, indent=2)
-
-    return removed_count
-
-# ---------------- Main interactive loop ----------------
+# ===== Main chatbot loop =====
 def main():
-    memory = Memory(str(MEMORY_FILE))
-    agent = Agent(model="llama3", memory=memory)  # adjust model name if needed
+    print("Welcome to AI Memento Day 12! Type '/exit' to quit.")
 
-    history = ChatHistoryManager()
-    current_session = history.start_session()
-    print(f"Started session: {current_session}")
+    while True:
+        mode = input("Choose mode (text/voice): ").strip().lower()
 
-    current_messages = []  # in-memory session for quick access
+        if mode == "voice":
+            user_input = listen()
+            print("You (voice):", user_input)
+        else:
+            user_input = input("You: ")
 
-    try:
-        while True:
-            user_input = input("You: ").strip()
-            if not user_input:
-                continue
+        # Commands
+        if user_input.lower() in ["/exit", "/quit"]:
+            print("Goodbye! 👋")
+            break
+        elif user_input.lower() == "/history list":
+            list_history()
+            continue
+        elif user_input.lower() == "/reset":
+            reset_memory()
+            continue
+        elif user_input.lower() == "/forget last":
+            if conversation_history:
+                last_user = conversation_history[-1]["user"]
+                print("Removing last user message from memory...")
+                remove_message_from_memory_text(last_user)
+                print("Last user message removed.")
+            else:
+                print("No history to forget.")
+            continue
 
-            # Command handling
-            if user_input.startswith("/"):
-                parts = user_input.split()
-                cmd = parts[0].lower()
+        # Get AI response
+        response = agent.chat(user_input)
+        print("AI:", response)
 
-                if cmd == "/history" or cmd == "/his":
-                    if len(parts) == 1 or parts[1] == "list":
-                        sessions = history.list_sessions()
-                        if not sessions:
-                            print("No saved sessions yet.")
-                        else:
-                            for i, f in enumerate(sessions):
-                                print(f"[{i}] {f.name}")
-                    elif parts[1] in ("show", "view"):
-                        if len(parts) < 3:
-                            print("Usage: /history show <index|filename>")
-                        else:
-                            ref = parts[2]
-                            try:
-                                ref_val = int(ref) if ref.isdigit() else ref
-                                msgs = history.read_session(ref_val)
-                                for m in msgs:
-                                    who = "You" if m["role"] == "user" else "AI"
-                                    print(f"[{m.get('time','')}] {who}: {m['text']}")
-                            except Exception as e:
-                                print("Error reading session:", e)
-                    elif parts[1] == "export":
-                        if len(parts) < 3:
-                            print("Usage: /history export <index|filename>")
-                        else:
-                            ref = parts[2]
-                            try:
-                                ref_val = int(ref) if ref.isdigit() else ref
-                                out = history.export_session_text(ref_val)
-                                print("Exported to:", out)
-                            except Exception as e:
-                                print("Error exporting session:", e)
-                    else:
-                        print("Unknown /history subcommand.")
-                    continue
+        if mode == "voice":
+            speak(response)
 
-                if cmd == "/save":
-                    out = history.export_session_text(current_session)
-                    print("Session saved as text:", out)
-                    continue
+        save_session_message(user_input, response)
 
-                if cmd in ("/exit", "/quit"):
-                    print("Exiting. Session auto-saved.")
-                    history.export_session_text(current_session)
-                    break
-
-                if cmd == "/forget" and len(parts) >= 2 and parts[1] == "last":
-                    # remove last user message from current session + memory.json
-                    # get last user message from in-memory messages; fallback to file
-                    last_user = None
-                    for m in reversed(current_messages):
-                        if m["role"] == "user":
-                            last_user = m["text"]
-                            break
-                    if not last_user:
-                        # try reading last session file
-                        data = history._read_json(current_session)
-                        for m in reversed(data):
-                            if m.get("role") == "user":
-                                last_user = m["text"]
-                                break
-                    if not last_user:
-                        print("No user message found to forget.")
-                        continue
-
-                    print("Backing up memory and attempting to remove occurrences of the last user message from memory.json...")
-                    matches = remove_message_from_memory_text(last_user)
-                    print(f"Removed {matches} matching entries from memory.json (best-effort).")
-                    # also remove from current session file
-                    sess = history._read_json(current_session)
-                    new_sess = []
-                    skipped = 0
-                    for m in sess:
-                        if m.get("role") == "user" and m.get("text") == last_user and skipped == 0:
-                            skipped += 1
-                            continue
-                        new_sess.append(m)
-                    history._write_json(current_session, new_sess)
-                    # update in-memory list too
-                    for i in range(len(current_messages) - 1, -1, -1):
-                        if current_messages[i]["role"] == "user" and current_messages[i]["text"] == last_user:
-                            current_messages.pop(i)
-                            break
-                    print("Removed last user message from current session file.")
-                    continue
-
-                if cmd == "/reset":
-                    b = backup_memory()
-                    clear_memory()
-                    print(f"memory.json backed up to {b} and cleared.")
-                    continue
-
-                print("Unknown command. Available: /history, /save, /forget last, /reset, /exit")
-                continue
-
-            # Normal chat flow
-            current_messages.append({"role": "user", "text": user_input, "time": datetime.now().isoformat()})
-            history.append_message("user", user_input)
-
-            response = agent.chat(user_input)  # your agent call
-            print("AI:", response)
-
-            current_messages.append({"role": "assistant", "text": response, "time": datetime.now().isoformat()})
-            history.append_message("assistant", response)
-
-    except KeyboardInterrupt:
-        print("\nInterrupted. Saving session...")
-        history.export_session_text(current_session)
-
+# ===== Run the chatbot =====
 if __name__ == "__main__":
     main()
+
+
+

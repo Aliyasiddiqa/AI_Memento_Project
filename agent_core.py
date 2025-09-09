@@ -21,3 +21,5 @@ class Agent:
         )
 
         return response['message']['content']
+if __name__ == "__main__":
+    main()
