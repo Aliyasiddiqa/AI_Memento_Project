@@ -1,4 +1,4 @@
-# 🧠 AI Memento Project
+#  AI Memento Project
 
 A simple **AI memory assistant** built with Python.  
 This bot can **remember facts about you**, **recall past conversations**, **summarize chat history**, and now even **change personality** and **tell time/date**.
