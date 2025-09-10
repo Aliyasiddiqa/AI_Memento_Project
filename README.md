@@ -121,7 +121,7 @@ Run the agent:
 python agent.py
 
 
-Start chatting! The AI will remember your conversations for future sessions.
+
 Conclusion
 
 The AI Memento Project demonstrates how conversational AI can be enhanced with memory to create more personalized, context-aware interactions. By combining natural language processing, persistent memory storage, and modular Python programming, this project showcases practical skills in AI development and software design.
