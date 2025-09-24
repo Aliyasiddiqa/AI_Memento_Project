@@ -1,103 +1,112 @@
-AI Memento –
-Project Overview
+🎯 AI Memento – Intelligent Assistant
 
-AI Memento is an intelligent assistant that interacts with users via text and voice.
-It can:
+💡 Project Overview
 
-Receive text input from the user.
+AI Memento is a Python-based intelligent assistant that interacts with users via text and voice, simulating a conversational AI.
+The project demonstrates the core capabilities of AI interaction, including:
 
-Convert speech to text (STT) for processing voice input.
+Text input processing
 
-Generate voice responses (TTS) from text.
+Speech-to-text (STT)
 
-Simulate conversation and maintain contextual memory of interactions.
+Text-to-speech (TTS)
 
-This project is designed as a Python-based local assistant and can be extended for real-time multi-user interaction in the future using LiveKit.
+Contextual memory within sessions
 
-Features
+It is designed for entry-level AI/ML projects, but can be extended for real-time multi-user interaction, GUI interfaces, and multimedia capabilities in the future.
 
-Text Interaction
+✨ Key Features
+1. Text Interaction
 
-User can type commands or questions in the terminal.
+Users can type queries or commands in the terminal.
 
-AI Memento responds in text.
+AI Memento responds with meaningful text outputs.
 
-Speech-to-Text (STT)
+Example:
 
-Users can speak commands, which are converted to text.
+You: Hello
+AI Memento: Sure, I can do that!
 
-Allows hands-free interaction.
+2. Speech-to-Text (STT)
 
-Text-to-Speech (TTS)
+Users can speak to the assistant, which converts voice to text.
 
-AI responds in voice, simulating a conversational assistant.
+Enables hands-free interaction.
 
-Contextual Memory
+Example:
 
-AI can remember previous interactions during the session.
+You (voice input): Tell me a joke
+AI Memento: This is a test response from AI Memento.
 
-Future extension can include persistent memory for long-term learning.
+3. Text-to-Speech (TTS)
 
-Agents Used
+AI Memento converts its text responses to voice output, making it feel like a real assistant.
 
-Input Agent: Handles user input (text or speech).
+Example:
 
-Processing Agent: Processes the input and decides the AI response.
+You: How are you?
+AI Memento (voice): This is a test response from AI Memento.
 
-Output Agent: Handles AI output (text and/or speech).
+4. Contextual Memory
 
-Memory Agent: Stores interaction context within the session.
+AI Memento remembers previous interactions within the session.
 
-Currently, memory is session-based, meaning it stores context while the program is running. It does not persist after closing the program.
+Enables context-aware responses.
 
-Setup Instructions
+Future enhancement: persistent memory for long-term conversation tracking.
 
-Clone the repository:
+🧠 Agents in AI Memento
 
+The project is modular and uses multiple agents for handling tasks:
+
+Agent	Function
+Input Agent	Handles user input (text or voice)
+Processing Agent	Analyzes input and generates AI responses
+Output Agent	Outputs responses as text and/or speech
+Memory Agent	Maintains session-based context for meaningful replies
+
+⚡ Note: Currently, memory is session-based and does not persist after the program exits.
+
+💻 Setup Instructions
+Step 1: Clone the Project
 git clone <your-repo-url>
 cd AI_Memento_Project
 
-
-Create a virtual environment:
-
+Step 2: Create a Virtual Environment
 python -m venv venv
 venv\Scripts\activate   # Windows
 
-
-Install dependencies:
-
+Step 3: Install Dependencies
 pip install -r requirements.txt
 
 
 Dependencies include:
 
-python-dotenv – for loading environment variables
+python-dotenv → Loads environment variables
 
-pyttsx3 (or other TTS library) – for text-to-speech
+pyttsx3 → Text-to-Speech
 
-speechrecognition or STT library – for speech-to-text
+speechrecognition → Speech-to-Text
 
-Run the AI Memento mock:
+pyaudio → Microphone access for voice input
 
-python ai_memento_mock.py
+Step 4: Configure Environment Variables
 
-
-Optional .env setup (if using API keys or future integration):
+Create a .env file (optional for API keys or future integrations):
 
 API_KEY=<your-api-key>
 
-Usage Example
+Step 5: Run the AI Memento Mock
+python ai_memento_mock.py
 
-Text Interaction:
-
+📖 Usage Examples
+Text Input
 You: Hello
 AI Memento: Sure, I can do that!
-
 You: What is the time?
 AI Memento: This is a test response from AI Memento.
 
-
-Speech Interaction:
+Speech-to-Text
 
 Speak into the microphone:
 
@@ -109,25 +118,32 @@ Terminal shows:
 You (voice input): Tell me a joke
 AI Memento: This is a test response from AI Memento.
 
+Text-to-Speech
 
-Voice Response (TTS):
+Type or speak input:
 
-AI Memento reads its response aloud.
+You: How are you?
+AI Memento (voice): This is a test response from AI Memento.
 
-Future Enhancements
+📂 Project Structure
+AI_Memento_Project/
+├─ ai_memento_mock.py   # Main script for text + voice interaction
+├─ requirements.txt     # Python dependencies
+├─ .env                 # Environment variables / API keys
+├─ assets/              # Optional folder for logs, audio, or outputs
+├─ README.md            # Project documentation
 
-Multi-user chat via LiveKit.
+🚀 Future Enhancements
 
-GUI interface for easier interaction.
+Multi-user support with LiveKit for real-time chat.
 
-Persistent memory to store long-term conversations.
+GUI interface using Tkinter or PyQt for a user-friendly experience.
 
-Image generation capability.
+Persistent memory to store conversations long-term.
 
-Integration with real-time voice/video communication.
+AI-generated images or multimedia responses.
 
-
-
+Integration with external APIs for enhanced knowledge or tasks.
 Conclusion
 
 The AI Memento Project demonstrates how conversational AI can be enhanced with memory to create more personalized, context-aware interactions. By combining natural language processing, persistent memory storage, and modular Python programming, this project showcases practical skills in AI development and software design.
