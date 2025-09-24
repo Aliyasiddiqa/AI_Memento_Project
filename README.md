@@ -1,124 +1,130 @@
-AI Memento Project
+AI Memento –
 Project Overview
 
-AI Memento is an intelligent, interactive AI assistant that can remember past interactions and provide personalized responses based on user memory. Unlike regular chatbots that respond statically, AI Memento maintains a memory of previous conversations, allowing for more context-aware and human-like interactions.
+AI Memento is an intelligent assistant that interacts with users via text and voice.
+It can:
 
-This project demonstrates practical applications of AI in natural language processing (NLP), memory management, and conversational AI, making it an excellent showcase for skills in Python, AI, and software design.
+Receive text input from the user.
 
-Key Features
+Convert speech to text (STT) for processing voice input.
 
-Memory-Based Interaction
+Generate voice responses (TTS) from text.
 
-The AI can remember user input across multiple sessions.
+Simulate conversation and maintain contextual memory of interactions.
 
-It uses a memory.json file to store past conversations.
+This project is designed as a Python-based local assistant and can be extended for real-time multi-user interaction in the future using LiveKit.
 
-Users experience more personalized and context-aware responses.
+Features
 
-Interactive Chat
+Text Interaction
 
-Users can chat with the AI through a simple command-line interface.
+User can type commands or questions in the terminal.
 
-AI responds intelligently using LLaMA (or other AI models) as the backend.
+AI Memento responds in text.
 
-Persistent Data
+Speech-to-Text (STT)
 
-Memory is saved locally, enabling long-term learning from user interactions.
+Users can speak commands, which are converted to text.
 
-This allows the AI to recall information about the user even after restarting the program.
+Allows hands-free interaction.
 
-Modular Design
+Text-to-Speech (TTS)
 
-Easy-to-understand code structure:
+AI responds in voice, simulating a conversational assistant.
 
-agent.py → Handles AI responses and user interactions.
+Contextual Memory
 
-memory.py → Handles storing and retrieving user memories.
+AI can remember previous interactions during the session.
 
-Modular design makes it easy to extend functionality.
+Future extension can include persistent memory for long-term learning.
 
-Customizable AI Personality
+Agents Used
 
-Personality traits and response styles can be modified in the code.
+Input Agent: Handles user input (text or speech).
 
-This allows developers to experiment with different AI behaviors.
+Processing Agent: Processes the input and decides the AI response.
 
-How It Works
+Output Agent: Handles AI output (text and/or speech).
 
-Memory Initialization
+Memory Agent: Stores interaction context within the session.
 
-When the AI starts, it loads a JSON file containing previous conversations.
+Currently, memory is session-based, meaning it stores context while the program is running. It does not persist after closing the program.
 
-Example: memory = Memory("memory.json")
-
-User Interaction
-
-User inputs text via command line:
-
-user_input = input("You: ")
-response = agent.chat(user_input)
-print("AI:", response)
-
-
-Memory Update
-
-After each response, the AI updates its memory file to include new interactions.
-
-Memory management ensures personalized, contextual responses in future chats.
-
-AI Model
-
-The AI uses LLaMA as the language model backend.
-
-Model interprets the input, considers memory, and generates relevant responses.
-
-Skills Demonstrated
-
-Python Programming – Modular coding and file handling.
-
-AI & NLP – Conversational AI using LLaMA.
-
-Data Persistence – Storing and retrieving structured data in JSON format.
-
-Project Design – Building maintainable, extensible code with memory functionality.
-
-Problem Solving – Implementing AI memory to enhance user experience.
-
-Potential Use Cases
-
-Personal digital assistant
-
-Customer support chatbots
-
-AI companions with memory
-
-Educational tools for interactive learning
-
-Future Enhancements
-
-Integrate with GUI or web app for better interaction.
-
-Add voice input/output for more immersive experience.
-
-Use cloud storage to make memory accessible across devices.
-
-Implement advanced memory retrieval for more complex conversations.
-
-How to Run
+Setup Instructions
 
 Clone the repository:
 
-git clone <repository_url>
+git clone <your-repo-url>
+cd AI_Memento_Project
 
 
-Install required Python packages:
+Create a virtual environment:
+
+python -m venv venv
+venv\Scripts\activate   # Windows
+
+
+Install dependencies:
 
 pip install -r requirements.txt
 
 
-Run the agent:
+Dependencies include:
 
-python agent.py
+python-dotenv – for loading environment variables
+
+pyttsx3 (or other TTS library) – for text-to-speech
+
+speechrecognition or STT library – for speech-to-text
+
+Run the AI Memento mock:
+
+python ai_memento_mock.py
+
+
+Optional .env setup (if using API keys or future integration):
+
+API_KEY=<your-api-key>
+
+Usage Example
+
+Text Interaction:
+
+You: Hello
+AI Memento: Sure, I can do that!
+
+You: What is the time?
+AI Memento: This is a test response from AI Memento.
+
+
+Speech Interaction:
+
+Speak into the microphone:
+
+“Tell me a joke”
+
+
+Terminal shows:
+
+You (voice input): Tell me a joke
+AI Memento: This is a test response from AI Memento.
+
+
+Voice Response (TTS):
+
+AI Memento reads its response aloud.
+
+Future Enhancements
+
+Multi-user chat via LiveKit.
+
+GUI interface for easier interaction.
+
+Persistent memory to store long-term conversations.
+
+Image generation capability.
+
+Integration with real-time voice/video communication.
 
 
 
@@ -126,4 +132,4 @@ Conclusion
 
 The AI Memento Project demonstrates how conversational AI can be enhanced with memory to create more personalized, context-aware interactions. By combining natural language processing, persistent memory storage, and modular Python programming, this project showcases practical skills in AI development and software design.
 
-This project is a great example of applying AI to real-world problems, such as virtual assistants, customer support, and educational tools. It not only highlights technical expertise but also the ability to design systems that learn and adapt over time, making it an impressive addition to any portfolio or resume.
+This project is a great example of applying AI to real-world problems, such as virtual assistants, customer support, and educational tools. It not only highlights technical expertise but also the ability to design systems that learn and adapt over time.
