@@ -8,10 +8,12 @@ from agent_core import Agent, Memory  # make sure your Agent & Memory classes ar
 engine = pyttsx3.init()
 
 def speak(text):
+    """Convert text to speech."""
     engine.say(text)
     engine.runAndWait()
 
 def listen():
+    """Capture voice input from microphone."""
     r = sr.Recognizer()
     with sr.Microphone() as source:
         print("Listening...")
@@ -37,24 +39,27 @@ agent = Agent(model="llama3", memory=memory)
 conversation_history = []
 
 def save_session_message(user_msg, ai_msg):
+    """Save each conversation turn to a JSON session file."""
     conversation_history.append({"user": user_msg, "ai": ai_msg})
     session_file = os.path.join(CHATS_FOLDER, f"chats_{len(conversation_history)}.json")
     with open(session_file, "w", encoding="utf-8") as f:
         json.dump(conversation_history, f, ensure_ascii=False, indent=2)
 
 def list_history():
+    """Print conversation history."""
     print("Conversation history:")
     for idx, item in enumerate(conversation_history, start=1):
         print(f"{idx}. You: {item['user']}  | AI: {item['ai']}")
 
 def reset_memory():
-    memory_path = MEMORY_FILE
-    if os.path.exists(memory_path):
-        with open(memory_path, "w", encoding="utf-8") as f:
+    """Clear the memory file."""
+    if os.path.exists(MEMORY_FILE):
+        with open(MEMORY_FILE, "w", encoding="utf-8") as f:
             f.write("{}")
         print("Memory reset successfully.")
 
 def remove_message_from_memory_text(message_text, memory_path=MEMORY_FILE):
+    """Remove a specific message from memory JSON."""
     if not os.path.exists(memory_path):
         with open(memory_path, "w", encoding="utf-8") as f:
             f.write("{}")
@@ -91,21 +96,24 @@ def main():
 
         if mode == "voice":
             user_input = listen()
+            if not user_input:
+                continue  # skip empty voice input
             print("You (voice):", user_input)
         else:
             user_input = input("You: ")
 
-        # Commands
-        if user_input.lower() in ["/exit", "/quit"]:
+        # ===== Commands =====
+        cmd = user_input.lower()
+        if cmd in ["/exit", "/quit"]:
             print("Goodbye! 👋")
             break
-        elif user_input.lower() == "/history list":
+        elif cmd == "/history list":
             list_history()
             continue
-        elif user_input.lower() == "/reset":
+        elif cmd == "/reset":
             reset_memory()
             continue
-        elif user_input.lower() == "/forget last":
+        elif cmd == "/forget last":
             if conversation_history:
                 last_user = conversation_history[-1]["user"]
                 print("Removing last user message from memory...")
@@ -115,13 +123,14 @@ def main():
                 print("No history to forget.")
             continue
 
-        # Get AI response
+        # ===== Get AI response =====
         response = agent.chat(user_input)
         print("AI:", response)
 
         if mode == "voice":
             speak(response)
 
+        # ===== Save conversation =====
         save_session_message(user_input, response)
 
 # ===== Run the chatbot =====
